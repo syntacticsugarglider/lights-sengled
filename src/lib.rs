@@ -83,6 +83,12 @@ pub struct Device {
     uuid: Mac,
 }
 
+impl Device {
+    pub fn uuid(&self) -> [u8; 6] {
+        self.uuid.0
+    }
+}
+
 #[derive(Debug, Clone)]
 struct Mac([u8; 6]);
 
