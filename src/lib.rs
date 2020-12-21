@@ -67,6 +67,12 @@ impl From<surf::Error> for Error {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum Color {
+    White { temperature: u32 },
+    Rgb { red: u8, green: u8, blue: u8 },
+}
+
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum LoginResponse {
@@ -159,11 +165,12 @@ pub struct SengledApi {
 }
 
 #[derive(Serialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 enum CommandType {
     Switch,
     Brightness,
     Color,
+    ColorTemperature,
 }
 
 #[derive(Serialize)]
@@ -295,11 +302,24 @@ impl SengledApi {
         })
         .await
     }
-    pub async fn set_color(&self, device: &Device, color: (u8, u8, u8)) -> Result<(), Error> {
+    pub async fn set_color(&self, device: &Device, color: Color) -> Result<(), Error> {
         self.send_command(&Command {
             dn: device.uuid.clone(),
-            ty: CommandType::Color,
-            value: format!("{}:{}:{}", color.0, color.1, color.2),
+            ty: if let Color::White { .. } = color {
+                CommandType::ColorTemperature
+            } else {
+                CommandType::Color
+            },
+            value: match color {
+                Color::Rgb { red, green, blue } => {
+                    format!("{}:{}:{}", red, green, blue)
+                }
+                Color::White { temperature } => {
+                    format!("{}", {
+                        (1. + (((temperature.min(6500) - 200) as f64) / 6300.) * 99.) as u8
+                    })
+                }
+            },
             time: CurrentTime,
         })
         .await

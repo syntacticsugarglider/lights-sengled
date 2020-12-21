@@ -1,4 +1,4 @@
-use lights_sengled::SengledApi;
+use lights_sengled::{Color, SengledApi};
 use smol::block_on;
 
 fn main() {
@@ -12,12 +12,16 @@ fn main() {
         let devices = api.get_devices().await.unwrap();
         let device = devices
             .into_iter()
-            .find(|device| device.name == "Guess")
+            .find(|device| device.name == "Sparkle")
             .unwrap();
         loop {
-            api.set_color(&device, (255, 0, 0)).await.unwrap();
+            api.set_color(&device, Color::White { temperature: 2700 })
+                .await
+                .unwrap();
             smol::Timer::after(std::time::Duration::from_millis(200)).await;
-            api.set_color(&device, (0, 0, 255)).await.unwrap();
+            api.set_color(&device, Color::White { temperature: 6500 })
+                .await
+                .unwrap();
             smol::Timer::after(std::time::Duration::from_millis(200)).await;
         }
     });
